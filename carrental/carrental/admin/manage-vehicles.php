@@ -1,0 +1,226 @@
+<?php
+session_start();
+error_reporting(0);
+include('includes/config.php');
+if(strlen($_SESSION['alogin'])==0)
+	{	
+header('location:index.php');
+}
+else{
+
+if(isset($_REQUEST['del']))
+	{
+$delid=intval($_GET['del']);
+$sql = "delete from tblvehicles  WHERE  id=:delid";
+$query = $dbh->prepare($sql);
+$query -> bindParam(':delid',$delid, PDO::PARAM_STR);
+$query -> execute();
+$msg="Vehicle  record deleted successfully";
+}
+
+
+ ?>
+
+<!doctype html>
+<html lang="en" class="no-js">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="theme-color" content="#3e454c">
+
+	<title>Car Rental Portal |Admin Manage Vehicles </title>
+
+	<!-- Font awesome -->
+	<link rel="stylesheet" href="css/font-awesome.min.css">
+	<!-- Sandstone Bootstrap CSS -->
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<!-- Bootstrap Datatables -->
+	<link rel="stylesheet" href="css/dataTables.bootstrap.min.css">
+	<!-- Bootstrap social button library -->
+	<link rel="stylesheet" href="css/bootstrap-social.css">
+	<!-- Bootstrap select -->
+	<link rel="stylesheet" href="css/bootstrap-select.css">
+	<!-- Bootstrap file input -->
+	<link rel="stylesheet" href="css/fileinput.min.css">
+	<!-- Awesome Bootstrap checkbox -->
+	<link rel="stylesheet" href="css/awesome-bootstrap-checkbox.css">
+	<!-- Admin Stye -->
+	<link rel="stylesheet" href="css/style.css">
+
+
+	<style>
+		.errorWrap {
+			padding: 10px;
+			margin: 0 0 20px 0;
+			background: #fff;
+			border-left: 4px solid #dd3d36;
+			-webkit-box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
+			box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
+		}
+
+		.succWrap {
+			padding: 10px;
+			margin: 0 0 20px 0;
+			background: #fff;
+			border-left: 4px solid #5cb85c;
+			-webkit-box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
+			box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
+		}
+	</style>
+
+</head>
+
+<body>
+	<?php include('includes/header.php');?>
+
+	<div class="ts-main-content">
+		<?php include('includes/leftbar.php');?>
+		<div class="content-wrapper">
+			<div class="container-fluid">
+
+				<div class="row">
+					<div class="col-md-12">
+
+						<h2 class="page-title">Manage Vehicles</h2>
+						<?php
+								try {
+								
+									// Check if the form is submitted
+									if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['SetStatus'])) {
+										// Get the data-id from the button
+										$dataId = $_POST['SetStatus'];
+										// Define the new carStatus value
+										$newCarStatus = 'Good Condition';
+
+										// Prepare and execute the SQL query
+										$sql = "UPDATE `tblvehicles` SET `carStatus`=:newCarStatus WHERE `id`=:dataId";
+										$stmt = $dbh->prepare($sql);
+										$stmt->bindParam(':newCarStatus', $newCarStatus, PDO::PARAM_STR);
+										$stmt->bindParam(':dataId', $dataId, PDO::PARAM_INT);
+										$stmt->execute();
+
+										// Optionally, you can check the affected rows to see if the update was successful
+										$affectedRows = $stmt->rowCount();
+										if ($affectedRows > 0) {
+											echo "Update successful!";
+										} else {
+											echo "No records updated";
+										}
+									}
+								} catch (PDOException $e) {
+									echo "Error: " . $e->getMessage();
+								}
+
+								?>
+						<!-- Zero Configuration Table -->
+						<div class="panel panel-default">
+							<div class="panel-heading">Vehicle Details</div>
+							<div class="panel-body">
+								<?php if($error){?><div class="errorWrap">
+									<strong>ERROR</strong>:<?php echo htmlentities($error); ?> </div><?php } 
+									else if($msg){?><div class="succWrap"><strong>SUCCESS</strong>:<?php echo htmlentities($msg); ?> </div><?php }?>
+								<table id="zctb" class="display table table-striped table-bordered table-hover"
+									cellspacing="0" width="100%">
+									<thead>
+										<tr>
+											<th>#</th>
+											<th>Vehicle Title</th>
+											<th>Brand </th>
+											<th>Price Per day</th>
+											<th>Fuel Type</th>
+											<th>Model Year</th>
+											<th>PLate Number</th>
+											<th>Car Status</th>
+											<th>Action</th>
+										</tr>
+									</thead>
+									<tfoot>
+										<tr>
+											<th>#</th>
+											<th>Vehicle Title</th>
+											<th>Brand </th>
+											<th>Price Per day</th>
+											<th>Fuel Type</th>
+											<th>Model Year</th>
+											<th>PLate Number</th>
+											<th>Car Status</th>
+											<th>Action</th>
+										</tr>
+										</tr>
+									</tfoot>
+									<tbody>
+										<?php $sql = "SELECT tblvehicles.VehiclesTitle,tblbrands.BrandName,tblvehicles.PricePerDay,
+											tblvehicles.FuelType,tblvehicles.ModelYear,tblvehicles.PlateNumber,tblvehicles.carStatus,
+											tblvehicles.id from tblvehicles INNER join tblbrands on tblbrands.id=tblvehicles.VehiclesBrand";
+											$query = $dbh -> prepare($sql);
+											$query->execute();
+											$results=$query->fetchAll(PDO::FETCH_OBJ);
+											$cnt=1;
+											if($query->rowCount() > 0)
+											{
+											foreach($results as $result)
+											{				?>
+										<tr>
+											<td><?php echo htmlentities($cnt);?> - <?php echo $result->id; ?></td>
+											<td><?php echo htmlentities($result->VehiclesTitle);?></td>
+											<td><?php echo htmlentities($result->BrandName);?></td>
+											<td><?php echo htmlentities($result->PricePerDay);?></td>
+											<td><?php echo htmlentities($result->FuelType);?></td>
+											<td><?php echo htmlentities($result->ModelYear);?></td>
+											<td><?php echo htmlentities($result->PlateNumber);?></td>
+											<td
+												style="background-color: <?php echo ($result->carStatus == 'Good Condition') ? 'Blue' : 'red'; ?>; color: white; font-weight: bold;">
+												<?php echo htmlentities($result->carStatus); ?>
+												<form method="post">
+													<input type="hidden" name="SetStatus"
+														value="<?php echo $result->id; ?>">
+													<input style="color:black" type="submit" value="Change Status">
+												</form>
+											</td>
+
+
+
+											<td><a href="edit-vehicle.php?id=<?php echo $result->id;?>"><i
+														class="fa fa-edit"></i></a>&nbsp;&nbsp;
+												<a href="manage-vehicles.php?del=<?php echo $result->id;?>"
+													onclick="return confirm('Do you want to delete');"><i
+														class="fa fa-close"></i></a></td>
+										</tr>
+										<?php $cnt=$cnt+1; }} ?>
+
+									</tbody>
+								</table>
+
+
+
+
+							</div>
+						</div>
+
+
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<!-- Loading Scripts -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap-select.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.dataTables.min.js"></script>
+	<script src="js/dataTables.bootstrap.min.js"></script>
+	<script src="js/Chart.min.js"></script>
+	<script src="js/fileinput.js"></script>
+	<script src="js/chartData.js"></script>
+	<script src="js/main.js"></script>
+</body>
+
+</html>
+<?php } ?>
